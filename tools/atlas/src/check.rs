@@ -233,6 +233,10 @@ fn syntax_scan(root: &Path, g: &Graph, scopes: &[String]) -> Vec<Problem> {
         while let Some(n) = stack.pop() {
             if n.is_error() || n.is_missing() {
                 let line = n.start_position().row + 1;
+                let txt = n.utf8_text(src.as_bytes()).unwrap_or("").trim_start();
+                if matches!(f.lang.as_str(), "tsx" | "javascript") && txt.starts_with('&') {
+                    continue;
+                }
                 if seen.insert(line) && seen.len() <= 5 {
                     let near: String = n.utf8_text(src.as_bytes()).unwrap_or("").chars().take(40).collect();
                     let message = if n.is_missing() {
@@ -308,6 +312,8 @@ pub fn check(root: &Path, scopes: &[String], tests: bool) -> Result<Value, Strin
     runs.push(Run { tool: "syntax".into(), cmd: "built-in (tree-sitter)".into(), ok: raw.is_empty(), ..Default::default() });
     let langs: BTreeSet<&str> = g.files.iter().filter(|f| store::in_scope(&f.path, None, scopes)).map(|f| f.lang.as_str()).collect();
     let rel = |p: &Path| store::rel(root, p);
+    // (language family, dir) checked by the language's own compiler/checker: its verdict wins over the built-in scan
+    let mut covered: Vec<(&str, String)> = Vec::new();
 
     // TypeScript
     if langs.iter().any(|l| matches!(*l, "typescript" | "tsx" | "javascript")) {
@@ -320,6 +326,9 @@ pub fn check(root: &Path, scopes: &[String], tests: bool) -> Result<Value, Strin
                 continue;
             }
             let (code, out, ms) = run_capture(&cmd, &dir, None);
+            if code.is_some() {
+                covered.push(("js", r.clone()));
+            }
             for l in out.lines() {
                 if let Some(c) = RE_TSC.captures(l.trim()) {
                     raw.push(Problem { source: "check".into(), tool: "tsc".into(), severity: c[4].into(), file: rel_to_root(root, &dir, &c[1]), line: c[2].parse().unwrap_or(1), col: c[3].parse().unwrap_or(0), code: c[5].into(), message: c[6].into(), rerun: vec![user_cmd.clone()], ..Default::default() });
@@ -339,6 +348,9 @@ pub fn check(root: &Path, scopes: &[String], tests: bool) -> Result<Value, Strin
             let _ = fs::write(&sp, PY_SYNTAX);
             let sps = sp.to_string_lossy().to_string();
             let (code, out, ms) = run_argv(&[py, "-I", &sps], root, Some(&serde_json::to_string(&files).unwrap()));
+            if code == Some(0) {
+                covered.push(("python", String::new()));
+            }
             let mut n = 0;
             for l in out.lines() {
                 if let Ok(v) = serde_json::from_str::<Value>(l.trim()) {
@@ -374,6 +386,9 @@ pub fn check(root: &Path, scopes: &[String], tests: bool) -> Result<Value, Strin
                 break;
             }
             let (code, out, ms) = run_capture(&cmd, &dir, None);
+            if code.is_some() {
+                covered.push(("rust", r.clone()));
+            }
             for l in out.lines() {
                 if let Some(c) = RE_CARGO.captures(l.trim()) {
                     raw.push(Problem { source: "check".into(), tool: "cargo".into(), severity: c[4].into(), file: rel_to_root(root, &dir, &c[1]), line: c[2].parse().unwrap_or(1), col: c[3].parse().unwrap_or(0), code: c.get(5).map(|m| m.as_str().into()).unwrap_or_default(), message: c[6].into(), rerun: vec![user_cmd.clone()], ..Default::default() });
@@ -393,6 +408,9 @@ pub fn check(root: &Path, scopes: &[String], tests: bool) -> Result<Value, Strin
                 break;
             }
             let (code, out, ms) = run_capture(&cmd, &dir, None);
+            if code.is_some() {
+                covered.push(("go", r.clone()));
+            }
             for l in out.lines() {
                 if let Some(c) = RE_COLON.captures(l.trim()) {
                     raw.push(Problem { source: "check".into(), tool: "go vet".into(), severity: "error".into(), file: rel_to_root(root, &dir, &c[1]), line: c[2].parse().unwrap_or(1), col: c[3].parse().unwrap_or(0), message: c[5].into(), rerun: vec![user_cmd.clone()], ..Default::default() });
@@ -432,10 +450,22 @@ pub fn check(root: &Path, scopes: &[String], tests: bool) -> Result<Value, Strin
             runs.push(Run { tool: "test".into(), cmd: user_cmd, ok: code == Some(0), exit: code, ms, skipped: String::new() });
         }
     }
-    // scope filter, dedupe (same file+line+message), finish
+    // scope filter, drop built-in syntax hits where the real checker covered the file, dedupe, finish
+    let family = |lang: &str| match lang {
+        "javascript" | "typescript" | "tsx" => "js",
+        "python" => "python",
+        "rust" => "rust",
+        _ => "go",
+    };
+    let lang_of: HashMap<&str, &str> = g.files.iter().map(|f| (f.path.as_str(), f.lang.as_str())).collect();
+    let is_covered = |file: &str| -> bool {
+        let Some(l) = lang_of.get(file) else { return false };
+        covered.iter().any(|(fam, dir)| *fam == family(l) && (dir.is_empty() || file.starts_with(&format!("{dir}/"))))
+    };
     let mut seen = BTreeSet::new();
     let mut problems: Vec<Problem> = raw
         .into_iter()
+        .filter(|p| p.tool != "syntax" || !is_covered(&p.file))
         .filter(|p| store::in_scope(&p.file, None, scopes))
         .filter(|p| seen.insert((p.file.clone(), p.line, p.message.clone())))
         .map(|mut p| {

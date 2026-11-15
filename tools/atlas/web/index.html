@@ -490,7 +490,7 @@ function renderMap() {
       n.rows = syms.slice(0, MAXROWS).map(s => ({s, sub: !!(s.parent && symById[s.parent])}));
       n.hidden = Math.max(0, syms.length - MAXROWS);
       n.h = HD + Math.max(1, n.rows.length + (n.hidden ? 1 : 0)) * RH + 8 + FT_H;
-    } else n.h = HD + 26 + FT_H;
+    } else n.h = HD + 10 + FT_H;
   }
   // wires (symbol level) + card-level adjacency
   const wires = [], adj = new Map(nodes.map(n => [n.id, new Set()])), indeg = new Map(nodes.map(n => [n.id, 0]));
@@ -520,11 +520,17 @@ function renderMap() {
     col.forEach(n => { const nb = nodes.filter(p => adj.get(p.id).has(n.id) || adj.get(n.id).has(p.id)).map(p => posY.get(p.id)).filter(v => v != null); n.bc = nb.length ? nb.reduce((a, b) => a + b, 0) / nb.length : posY.get(n.id); });
     col.sort((a, b) => a.bc - b.bc).forEach((n, i) => posY.set(n.id, i));
   }
-  const heights = cols.map(col => col ? col.reduce((s, n) => s + n.h + GAPY, -GAPY) : 0);
-  let maxH = Math.max(0, ...heights);
-  cols.forEach((col, l) => { if (!col) return; let y = (maxH - heights[l]) / 2; col.forEach(n => { n.x = l * (NW + GAPX); n.y = y; y += n.h + GAPY; }); });
+  // wrap tall layers into several shorter side-by-side columns so the sheet stays compact
+  const area = nodes.filter(linked).reduce((a, n) => a + (n.h + GAPY) * (NW + GAPX), 0);
+  const targetH = Math.max(720, Math.sqrt(area) * .9);
+  const sub = cols.map(col => { if (!col) return []; const out = [[]]; let h = 0;
+    for (const n of col) { if (h && h + n.h > targetH) { out.push([]); h = 0; } out[out.length - 1].push(n); h += n.h + GAPY; } return out; });
+  const subH = c => c.reduce((s, n) => s + n.h + GAPY, -GAPY);
+  let maxH = Math.max(0, ...sub.flat().map(subH));
+  let x = 0, nColsUsed = 0;
+  sub.forEach(layer => { layer.forEach((c, i) => { let y = (maxH - subH(c)) / 2; c.forEach(n => { n.x = x; n.y = y; y += n.h + GAPY; }); x += NW + (i < layer.length - 1 ? 44 : GAPX); nColsUsed++; }); });
   // unconnected cards: a shelf of rows under the diagram, wrapped to its width
-  const perRow = Math.max(3, cols.length * 2 - 1), shelfTop = cols.length ? maxH + 90 : 30;
+  const perRow = Math.max(3, Math.min(8, nColsUsed * 2 - 1)), shelfTop = nColsUsed ? maxH + 90 : 30;
   let shelfH = 0;
   for (let i = 0; i < alone.length; i += perRow) {
     const row = alone.slice(i, i + perRow), rh = Math.max(...row.map(n => n.h));
@@ -532,7 +538,7 @@ function renderMap() {
     shelfH += rh + GAPY;
   }
   if (alone.length) maxH = shelfTop + shelfH;
-  const width = Math.max(cols.length * (NW + GAPX) - GAPX, Math.min(alone.length, perRow) * (NW + 40) - 40);
+  const width = Math.max(x - GAPX, Math.min(alone.length, perRow) * (NW + 40) - 40);
   // terminal positions
   const rowY = (n, symId) => { if (n.dir) return n.y + HD / 2; const i = n.rows.findIndex(r => r.s.id === symId); return n.y + HD + (i < 0 ? n.rows.length : i) * RH + RH / 2; };
   const wireSvg = w => {
@@ -567,7 +573,7 @@ function renderMap() {
         ${n.dir ? "" : `<div style="padding-top:4px">${rows}</div>`}
         <div class="ft">${marker(n.st.cls, 9)} ${foot}${(() => { const k = n.files.reduce((a, f) => a + (probByFile[f.path]?.length || 0), 0); return k ? `<span class="bad">⚠ ${k}</span>` : ""; })()}</div></div></foreignObject></g>`;
   };
-  const colHead = alone.length && cols.length ? `<text class="colhd" x="0" y="${shelfTop - 16}">${esc(L.alone)}</text><path d="M0 ${shelfTop - 34}H${width}" style="stroke:var(--rule-2);stroke-dasharray:2 4"/>` : "";
+  const colHead = alone.length && nColsUsed ? `<text class="colhd" x="0" y="${shelfTop - 16}">${esc(L.alone)}</text><path d="M0 ${shelfTop - 34}H${width}" style="stroke:var(--rule-2);stroke-dasharray:2 4"/>` : "";
   const dn = dirNote(bp);
   $("#main").innerHTML = `<div id="mapwrap"><svg id="map" aria-label="${L.map}">
       <defs><pattern id="grat" width="24" height="24" patternUnits="userSpaceOnUse"><path d="M24 0H0V24" style="fill:none;stroke:var(--grid);stroke-width:.6"/></pattern>

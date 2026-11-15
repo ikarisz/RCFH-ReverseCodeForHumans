@@ -155,6 +155,21 @@ fn family(file: &str) -> &'static str {
     }
 }
 
+/// `obj.name()` may only land on a real method: one that belongs to a class/struct/trait
+/// (or a Rust/Go impl, which has no parent symbol), never a function nested in some
+/// object literal, and never a method nested inside the caller itself.
+fn member_target(g: &Graph, i: usize, kind_of: &HashMap<&str, &str>, caller: &str) -> bool {
+    let t = &g.symbols[i];
+    if t.kind != "method" {
+        return false;
+    }
+    match t.parent.as_deref() {
+        None => true,
+        Some(p) if p == caller => false,
+        Some(p) => matches!(kind_of.get(p).copied(), Some("class" | "struct" | "interface" | "trait" | "enum")),
+    }
+}
+
 fn resolve(g: &mut Graph) {
     let mut by_name: HashMap<String, Vec<usize>> = HashMap::new();
     for (i, s) in g.symbols.iter().enumerate() {
@@ -162,6 +177,7 @@ fn resolve(g: &mut Graph) {
             by_name.entry(last_seg(&s.name).to_string()).or_default().push(i);
         }
     }
+    let kind_of: HashMap<&str, &str> = g.symbols.iter().map(|s| (s.id.as_str(), s.kind.as_str())).collect();
     let mut unresolved = 0;
     let mut all: Vec<Vec<String>> = Vec::with_capacity(g.symbols.len());
     for s in &g.symbols {
@@ -173,7 +189,7 @@ fn resolve(g: &mut Graph) {
             let cands: Vec<usize> = cands
                 .iter()
                 .copied()
-                .filter(|&i| family(&g.symbols[i].file) == fam && (!member || g.symbols[i].kind == "method"))
+                .filter(|&i| family(&g.symbols[i].file) == fam && (!member || member_target(g, i, &kind_of, &s.id)))
                 .collect();
             let same: Vec<&usize> = cands.iter().filter(|&&i| g.symbols[i].file == s.file && g.symbols[i].id != s.id).collect();
             let pick: Vec<&usize> = if !same.is_empty() {
