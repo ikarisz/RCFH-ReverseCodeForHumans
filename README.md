@@ -10,7 +10,8 @@ Sister project of [RSFA](https://github.com/ikarisz/RSFA-ReverseSkillsForAgents)
 
 | | |
 |---|---|
-| 🗺️ **Map app** | `atlas open` gives you a zoomable map of folders and files, function cards with explanation, "uses / used by" links, the code beside it, and search. It runs on `127.0.0.1` only and updates live while the agent writes. |
+| 🔌 **Wiring diagram** | `atlas open` shows every file as a box listing **each function inside it**. A wire runs from the exact function that makes a call to the exact function it calls. Callers are on the left and the functions they call are on the right. Hover a function to trace only its wires; click to read its explanation. It runs on `127.0.0.1` only and updates live while the agent writes. |
+| 📖 **Reading view** | Each function shows its line number, a plain-language explanation, *uses / used by* links, the code beside it, and a jump back to its wires on the diagram. |
 | 🧠 **Agent writes, tool measures** | tree-sitter builds the structure and call graph with no AI. The agent spends tokens only on explanations for exactly the code `atlas pending` hands it. |
 | 💸 **On demand, never automatic** | Nothing runs by itself. You choose the scope: a folder, a file, a function, or `--changed` (new code in git). |
 | ⏱️ **Knows when it's outdated** | Each explanation stores a hash of its code with comments and whitespace removed. When the code changes, the map marks it 🟠 and `/atlas --changed` re-explains only that. |
@@ -103,8 +104,9 @@ RCFH (CodeAtlas) คือแอปที่รันบนเครื่อง
 - **ไม่ทำงานเองอัตโนมัติ** จะทำงานเฉพาะตอนพิมพ์ `/atlas <โฟลเดอร์|ไฟล์|--changed>` เท่านั้น จึงไม่เปลือง token
 - **รู้ว่าคำอธิบายไหนล้าสมัย** ถ้าโค้ดเปลี่ยน แผนที่จะขึ้นสีส้ม และ `/atlas --changed` จะอธิบายเฉพาะส่วนที่เปลี่ยน
 - **เขียนลงในโค้ดได้แบบไม่ทำให้โค้ดพัง** `atlas inline --apply` จะตรวจโครงสร้างโค้ดว่าเหมือนเดิม 100% ก่อนบันทึก และ `atlas uninline --apply` ลบออกได้หมด
+- **แผนผังสายไฟ (`atlas open`)** ในกล่องของแต่ละไฟล์จะมีรายชื่อทุกฟังก์ชัน และมีสายลากจากฟังก์ชันที่เรียกไปหาฟังก์ชันที่ถูกเรียกแบบตัวต่อตัว ชี้ที่ชื่อเพื่อเน้นเฉพาะสายของมัน
 - เปิดแผนที่ด้วย `atlas open` หรือเปิดใน Obsidian ด้วย `atlas vault`
 
 ## License
 
-MIT
+MIT. Bundled fonts: IBM Plex Sans Thai and IBM Plex Mono, SIL Open Font License 1.1 ([`tools/atlas/web/fonts/OFL.txt`](tools/atlas/web/fonts/OFL.txt)).

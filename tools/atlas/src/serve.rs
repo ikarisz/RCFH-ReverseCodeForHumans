@@ -10,6 +10,13 @@ use std::time::UNIX_EPOCH;
 use std::{fs, thread};
 
 const INDEX: &str = include_str!("../web/index.html");
+// IBM Plex Sans Thai + Plex Mono (SIL OFL 1.1, see web/fonts/OFL.txt), embedded so the app works offline.
+const FONTS: &[(&str, &[u8])] = &[
+    ("IBMPlexSansThai-Regular.ttf", include_bytes!("../web/fonts/IBMPlexSansThai-Regular.ttf")),
+    ("IBMPlexSansThai-Medium.ttf", include_bytes!("../web/fonts/IBMPlexSansThai-Medium.ttf")),
+    ("IBMPlexSansThai-SemiBold.ttf", include_bytes!("../web/fonts/IBMPlexSansThai-SemiBold.ttf")),
+    ("IBMPlexMono-Regular.ttf", include_bytes!("../web/fonts/IBMPlexMono-Regular.ttf")),
+];
 
 fn data(root: &Path) -> Value {
     let g = crate::fresh_graph(root).unwrap_or_default();
@@ -105,6 +112,15 @@ fn handle(root: &Path, s: TcpStream) {
     match path {
         "/" | "/index.html" => respond(s, "200 OK", "text/html; charset=utf-8", INDEX.as_bytes()),
         "/api/data" => respond(s, "200 OK", "application/json", serde_json::to_string(&data(root)).unwrap().as_bytes()),
+        p if p.starts_with("/fonts/") => match FONTS.iter().find(|(n, _)| p[7..] == **n) {
+            Some((_, b)) => {
+                let h = format!("HTTP/1.1 200 OK\r\nContent-Type: font/ttf\r\nContent-Length: {}\r\nCache-Control: max-age=31536000\r\nConnection: close\r\n\r\n", b.len());
+                let mut s = s;
+                let _ = s.write_all(h.as_bytes());
+                let _ = s.write_all(b);
+            }
+            None => respond(s, "404 Not Found", "text/plain", b"not found"),
+        },
         "/api/version" => respond(s, "200 OK", "application/json", version(root).to_string().as_bytes()),
         "/api/source" => {
             let Some(file) = query(q, "path") else { return respond(s, "400 Bad Request", "text/plain", b"path") };
