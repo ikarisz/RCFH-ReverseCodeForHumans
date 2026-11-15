@@ -1,0 +1,3 @@
+target/
+.atlas/graph.json
+.atlas/vault/

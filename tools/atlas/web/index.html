@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CodeAtlas</title>
+<style>
+:root{--bg:#f6f5f1;--panel:#fffefb;--ink:#22211d;--muted:#6f6b62;--line:#e3dfd5;--accent:#3d5afe;--ok:#2e9d5b;--stale:#d48a12;--missing:#a8a395;--chip:#efece4;--code:#f1efe8;--shadow:0 1px 2px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.04)}
+@media (prefers-color-scheme:dark){:root{--bg:#17171a;--panel:#1f1f23;--ink:#e9e7e1;--muted:#9a978f;--line:#2e2e34;--accent:#8c9eff;--ok:#4cc27e;--stale:#e6a23c;--missing:#6c6a64;--chip:#2a2a30;--code:#141417;--shadow:none}}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:14px/1.6 "Noto Sans Thai","Sarabun","Segoe UI",system-ui,sans-serif}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+#app{display:grid;grid-template-columns:280px 1fr;grid-template-rows:52px 1fr;height:100vh}
+header{grid-column:1/3;display:flex;align-items:center;gap:14px;padding:0 16px;border-bottom:1px solid var(--line);background:var(--panel)}
+.logo{font-weight:700;letter-spacing:.2px}
+.logo span{color:var(--accent)}
+#search{flex:1;max-width:460px;padding:7px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit}
+.cov{margin-left:auto;display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px}
+.bar{width:120px;height:6px;border-radius:3px;background:var(--chip);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--ok)}
+.tabs button{padding:6px 10px;border-radius:6px;color:var(--muted)}
+.tabs button.on{background:var(--chip);color:var(--ink)}
+aside{border-right:1px solid var(--line);overflow:auto;padding:10px 6px;background:var(--panel)}
+.tree div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:2px 8px;border-radius:6px;cursor:pointer;color:var(--ink)}
+.tree div:hover{background:var(--chip)}
+.tree div.sel{background:var(--chip);font-weight:600}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:1px}
+.ok{background:var(--ok)}.stale{background:var(--stale)}.missing{background:var(--missing)}.partial{background:linear-gradient(90deg,var(--ok) 50%,var(--missing) 50%)}
+main{overflow:auto;position:relative}
+.crumbs{padding:14px 24px 0;color:var(--muted);font-size:13px}
+.crumbs a{color:var(--accent);cursor:pointer;text-decoration:none}
+.wrap{max-width:920px;padding:8px 24px 60px}
+h1{font-size:22px;margin:6px 0 4px}
+.lead{font-size:16px;margin:0 0 6px}
+.muted{color:var(--muted)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin:12px 0;box-shadow:var(--shadow)}
+.card.focus{outline:2px solid var(--accent)}
+.card h3{margin:0;font-size:15px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.kind{font-size:11px;padding:1px 7px;border-radius:10px;background:var(--chip);color:var(--muted);font-weight:500}
+.badge{font-size:11px;padding:1px 7px;border-radius:10px;color:#fff}
+.badge.stale{background:var(--stale)}.badge.missing{background:var(--missing)}
+.sum{margin:6px 0 0;font-size:15px}
+.det{white-space:pre-wrap;margin:8px 0 0;color:var(--ink)}
+.rel{margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:12.5px}
+.chip{background:var(--chip);border-radius:6px;padding:1px 8px;cursor:pointer}
+.chip:hover{outline:1px solid var(--accent)}
+.code{margin-top:10px;background:var(--code);border-radius:8px;padding:10px 12px;font:12.5px/1.5 ui-monospace,"Cascadia Code",Consolas,monospace;white-space:pre;overflow:auto;max-height:420px;border:1px solid var(--line)}
+.linkbtn{color:var(--accent);font-size:12.5px;margin-top:8px}
+#map{width:100%;height:calc(100vh - 52px);display:block;cursor:grab}
+#map text{fill:var(--ink);font-size:12px;pointer-events:none}
+#map .sub{fill:var(--muted);font-size:10.5px}
+#map line{stroke:var(--line);stroke-width:1.5}
+#map .node rect{fill:var(--panel);stroke:var(--line);stroke-width:1.2;rx:10}
+#map .node:hover rect{stroke:var(--accent)}
+#map .node{cursor:pointer}
+.legend{position:absolute;left:16px;bottom:14px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:12px;color:var(--muted)}
+.hint{position:absolute;right:16px;top:14px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:12px;color:var(--muted);max-width:340px}
+.empty{padding:40px 24px;color:var(--muted)}
+kbd{background:var(--chip);border-radius:4px;padding:0 5px;font-family:ui-monospace,monospace}
+@media (max-width:760px){#app{grid-template-columns:1fr}aside{display:none}header{grid-column:1}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="logo">Code<span>Atlas</span></div>
+    <input id="search" placeholder="ค้นหาฟังก์ชัน ไฟล์ หรือคำอธิบาย…" autocomplete="off">
+    <div class="tabs"><button id="tMap" class="on">แผนที่</button><button id="tRead">อ่าน</button></div>
+    <div class="cov"><span id="covTxt"></span><div class="bar"><i id="covBar" style="width:0"></i></div></div>
+  </header>
+  <aside><div class="tree" id="tree"></div></aside>
+  <main id="main"><div class="empty">กำลังอ่านโปรเจกต์… / scanning…</div></main>
+</div>
+<script>
+const T = {
+  th: {map:"แผนที่", read:"อ่าน", search:"ค้นหาฟังก์ชัน ไฟล์ หรือคำอธิบาย…", explained:"อธิบายแล้ว", uses:"เรียกใช้", usedBy:"ถูกเรียกโดย",
+       showCode:"ดูโค้ด", hideCode:"ซ่อนโค้ด", stale:"อาจล้าสมัย", missing:"ยังไม่มีคำอธิบาย", project:"โปรเจกต์",
+       noNote:"ยังไม่มีคำอธิบายส่วนนี้ — สั่ง agent: ", legend:"เขียว = อธิบายแล้ว · ครึ่งเขียว = อธิบายบางส่วน · ส้ม = โค้ดเปลี่ยนหลังอธิบาย · เทา = ยังไม่มี",
+       hint:"คลิกกล่องเพื่อเข้าไปดูข้างใน · ลากเพื่อเลื่อน · scroll เพื่อซูม", line:"บรรทัด", items:"รายการ", results:"ผลการค้นหา", none:"ไม่พบ"},
+  en: {map:"Map", read:"Read", search:"Search functions, files or explanations…", explained:"explained", uses:"Uses", usedBy:"Used by",
+       showCode:"Show code", hideCode:"Hide code", stale:"may be outdated", missing:"not explained yet", project:"Project",
+       noNote:"No explanation yet — ask your agent: ", legend:"green = explained · half = partly explained · orange = code changed since · gray = missing",
+       hint:"Click a box to go inside · drag to pan · scroll to zoom", line:"line", items:"items", results:"Results", none:"Nothing found"}
+};
+let D = null, L = T.th, view = {mode:"map", path:"", focus:null, q:""}, ver = null;
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const symById = {}; let calledBy = {};
+
+async function load() {
+  const r = await fetch("/api/data"); D = await r.json();
+  L = T[D.config?.lang] || T.en;
+  document.documentElement.lang = D.config?.lang || "en";
+  $("#tMap").textContent = L.map; $("#tRead").textContent = L.read; $("#search").placeholder = L.search;
+  for (const k in symById) delete symById[k];
+  calledBy = {};
+  for (const s of D.symbols) symById[s.id] = s;
+  for (const s of D.symbols) for (const c of s.calls) (calledBy[c] ||= []).push(s.id);
+  const all = D.symbols.length, ok = D.symbols.filter(s => D.notes[s.id]?.status === "ok").length;
+  $("#covTxt").textContent = `${ok}/${all} ${L.explained}`;
+  $("#covBar").style.width = (all ? ok / all * 100 : 0) + "%";
+  renderTree(); render();
+}
+
+// ---------- structure helpers
+function children(path) { // immediate sub-folders and files under folder path ("" = root)
+  const pre = path ? path + "/" : "", dirs = new Map(), files = [];
+  for (const f of D.files) {
+    if (!f.path.startsWith(pre)) continue;
+    const rest = f.path.slice(pre.length), i = rest.indexOf("/");
+    if (i < 0) files.push(f); else { const d = pre + rest.slice(0, i); dirs.set(d, (dirs.get(d) || []).concat(f)); }
+  }
+  // collapse single-child folder chains (src/app/x → one box)
+  return {dirs: [...dirs.entries()].map(([d, fs]) => ({path: d, files: fs})), files};
+}
+function statusOf(files) {
+  const syms = D.symbols.filter(s => files.some(f => f.path === s.file));
+  const ok = syms.filter(s => D.notes[s.id]?.status === "ok").length, st = syms.filter(s => D.notes[s.id]?.status === "stale").length;
+  return {n: syms.length, ok, st, cls: !syms.length ? (files.every(f => f.status === "ok") ? "ok" : "missing") : st ? "stale" : ok === syms.length ? "ok" : ok ? "partial" : "missing"};
+}
+const dirNote = p => D.dirs[p + "/"] || (p === "" ? D.dirs[""] : null);
+const fileOf = p => D.files.find(f => f.path === p);
+const groupOf = (file, base) => { const pre = base ? base + "/" : ""; if (!file.startsWith(pre)) return null; const rest = file.slice(pre.length); const i = rest.indexOf("/"); return i < 0 ? file : pre + rest.slice(0, i); };
+
+// ---------- tree
+function renderTree() {
+  const out = [], open = new Set();
+  let p = view.path; while (p) { open.add(p); p = p.includes("/") ? p.slice(0, p.lastIndexOf("/")) : ""; }
+  const walk = (path, depth) => {
+    const c = children(path);
+    for (const d of c.dirs.sort((a, b) => a.path.localeCompare(b.path))) {
+      const s = statusOf(d.files), name = d.path.split("/").pop();
+      out.push(`<div data-p="${esc(d.path)}" data-t="dir" class="${view.path === d.path ? "sel" : ""}" style="padding-left:${8 + depth * 14}px"><span class="dot ${s.cls}"></span>${open.has(d.path) ? "▾" : "▸"} ${esc(name)}</div>`);
+      if (open.has(d.path)) walk(d.path, depth + 1);
+    }
+    for (const f of c.files) {
+      const s = statusOf([f]);
+      out.push(`<div data-p="${esc(f.path)}" data-t="file" class="${view.path === f.path ? "sel" : ""}" style="padding-left:${8 + depth * 14}px" title="${esc(f.summary || "")}"><span class="dot ${s.cls}"></span>${esc(f.path.split("/").pop())}</div>`);
+    }
+  };
+  out.push(`<div data-p="" data-t="dir" class="${view.path === "" ? "sel" : ""}"><b>${esc(D.name || L.project)}</b></div>`);
+  walk("", 1);
+  $("#tree").innerHTML = out.join("");
+}
+$("#tree").onclick = e => { const d = e.target.closest("[data-p]"); if (!d) return; go(d.dataset.p, null); };
+
+function go(path, focus) {
+  view.path = path; view.focus = focus; view.q = ""; $("#search").value = "";
+  if (fileOf(path)) view.mode = "read";
+  history.replaceState(null, "", "#" + encodeURIComponent(path) + (focus ? "@" + encodeURIComponent(focus) : ""));
+  renderTree(); render();
+}
+$("#tMap").onclick = () => { view.mode = "map"; if (fileOf(view.path)) view.path = view.path.includes("/") ? view.path.slice(0, view.path.lastIndexOf("/")) : ""; renderTree(); render(); };
+$("#tRead").onclick = () => { view.mode = "read"; render(); };
+$("#search").oninput = e => { view.q = e.target.value.trim(); render(); };
+
+function crumbs(path) {
+  const parts = path ? path.split("/") : [];
+  let acc = "", h = `<a data-go="">${esc(D.name || L.project)}</a>`;
+  for (const p of parts) { acc = acc ? acc + "/" + p : p; h += ` / <a data-go="${esc(acc)}">${esc(p)}</a>`; }
+  return `<div class="crumbs">${h}</div>`;
+}
+document.addEventListener("click", e => {
+  const a = e.target.closest("[data-go]"); if (a) { e.preventDefault(); go(a.dataset.go, null); return; }
+  const s = e.target.closest("[data-sym]"); if (s) { const sy = symById[s.dataset.sym]; if (sy) go(sy.file, sy.id); }
+  const c = e.target.closest("[data-code]"); if (c) toggleCode(c);
+});
+
+// ---------- render
+function tab() { $("#tMap").classList.toggle("on", view.mode === "map"); $("#tRead").classList.toggle("on", view.mode === "read"); }
+function render() {
+  if (D && fileOf(view.path)) view.mode = "read";
+  tab();
+  if (view.q) return renderSearch();
+  if (view.mode === "map" && !fileOf(view.path)) return renderMap();
+  if (fileOf(view.path)) return renderFile(view.path);
+  return renderFolder(view.path);
+}
+
+function noteBlock(n, cmd) {
+  if (!n || !n.summary) return `<p class="muted">${L.noNote}<kbd>${esc(cmd)}</kbd></p>`;
+  return `<p class="sum">${esc(n.summary)}</p>${n.detail ? `<div class="det">${esc(n.detail)}</div>` : ""}`;
+}
+
+function renderFolder(path) {
+  const c = children(path), n = dirNote(path);
+  let h = crumbs(path) + `<div class="wrap"><h1>${esc(path ? path.split("/").pop() : D.name || L.project)}</h1>` + noteBlock(n, `/atlas ${path || "."}`);
+  for (const d of c.dirs) {
+    const s = statusOf(d.files), dn = D.dirs[d.path + "/"];
+    h += `<div class="card"><h3><span class="dot ${s.cls}"></span><a data-go="${esc(d.path)}" style="color:inherit;cursor:pointer">📁 ${esc(d.path.split("/").pop())}</a><span class="kind">${d.files.length} files</span></h3>${dn ? `<p class="sum">${esc(dn.summary)}</p>` : ""}</div>`;
+  }
+  for (const f of c.files) {
+    const s = statusOf([f]);
+    h += `<div class="card"><h3><span class="dot ${s.cls}"></span><a data-go="${esc(f.path)}" style="color:inherit;cursor:pointer">📄 ${esc(f.path.split("/").pop())}</a><span class="kind">${s.n} ${L.items}</span></h3>${f.summary ? `<p class="sum">${esc(f.summary)}</p>` : ""}</div>`;
+  }
+  $("#main").innerHTML = h + "</div>";
+}
+
+function symCard(s) {
+  const n = D.notes[s.id] || {}, st = n.status || "missing";
+  const uses = s.calls.map(c => symById[c]).filter(Boolean), by = (calledBy[s.id] || []).map(c => symById[c]).filter(Boolean);
+  const chip = x => `<span class="chip" data-sym="${esc(x.id)}" title="${esc(D.notes[x.id]?.summary || x.file)}">${esc(x.name)}</span>`;
+  return `<div class="card ${view.focus === s.id ? "focus" : ""}" id="c-${esc(s.id)}">
+    <h3><span class="dot ${st}"></span>${esc(s.name)} <span class="kind">${esc(s.kind)}</span>${st !== "ok" ? `<span class="badge ${st}">${st === "stale" ? L.stale : L.missing}</span>` : ""}</h3>
+    ${noteBlock(n.summary ? n : null, `/atlas ${s.id}`)}
+    ${uses.length ? `<div class="rel"><span class="muted">${L.uses}:</span>${uses.map(chip).join("")}</div>` : ""}
+    ${by.length ? `<div class="rel"><span class="muted">${L.usedBy}:</span>${by.map(chip).join("")}</div>` : ""}
+    <button class="linkbtn" data-code="${esc(s.file)}|${s.start}|${s.end}">${L.showCode} · ${L.line} ${s.start}</button>
+  </div>`;
+}
+
+function renderFile(path) {
+  const f = fileOf(path), syms = D.symbols.filter(s => s.file === path);
+  const top = syms.filter(s => !s.parent || !symById[s.parent]);
+  let h = crumbs(path) + `<div class="wrap"><h1>${esc(path.split("/").pop())}</h1><p class="muted">${esc(path)} · ${f.lines} lines · ${esc(f.lang)}</p>` + noteBlock(f.summary ? f : null, `/atlas ${path}`);
+  const emit = (s, depth) => { h += `<div style="margin-left:${depth * 22}px">${symCard(s)}</div>`; for (const c of syms.filter(x => x.parent === s.id)) emit(c, depth + 1); };
+  for (const s of top) emit(s, 0);
+  $("#main").innerHTML = h + "</div>";
+  if (view.focus) document.getElementById("c-" + view.focus)?.scrollIntoView({block: "center"});
+}
+
+async function toggleCode(btn) {
+  const card = btn.closest(".card"), ex = card.querySelector(".code");
+  if (ex) { ex.remove(); btn.textContent = btn.textContent.replace(L.hideCode, L.showCode); return; }
+  const [file, from, to] = btn.dataset.code.split("|");
+  const r = await fetch(`/api/source?path=${encodeURIComponent(file)}&from=${from}&to=${to}`);
+  const pre = document.createElement("div"); pre.className = "code"; pre.textContent = await r.text();
+  btn.after(pre); btn.textContent = btn.textContent.replace(L.showCode, L.hideCode);
+}
+
+function renderSearch() {
+  const q = view.q.toLowerCase(), hits = [];
+  for (const s of D.symbols) { const n = D.notes[s.id]; if (s.name.toLowerCase().includes(q) || (n?.summary || "").toLowerCase().includes(q) || (n?.detail || "").toLowerCase().includes(q)) hits.push(s); if (hits.length > 60) break; }
+  const fh = D.files.filter(f => f.path.toLowerCase().includes(q) || (f.summary || "").toLowerCase().includes(q)).slice(0, 20);
+  let h = `<div class="wrap"><h1>${L.results}: “${esc(view.q)}”</h1>`;
+  for (const f of fh) h += `<div class="card"><h3><a data-go="${esc(f.path)}" style="color:inherit;cursor:pointer">📄 ${esc(f.path)}</a></h3>${f.summary ? `<p class="sum">${esc(f.summary)}</p>` : ""}</div>`;
+  for (const s of hits) h += `<div class="card"><h3><span class="dot ${D.notes[s.id]?.status || "missing"}"></span><span class="chip" data-sym="${esc(s.id)}">${esc(s.name)}</span><span class="kind">${esc(s.file)}</span></h3>${D.notes[s.id]?.summary ? `<p class="sum">${esc(D.notes[s.id].summary)}</p>` : ""}</div>`;
+  if (!fh.length && !hits.length) h += `<p class="muted">${L.none}</p>`;
+  $("#main").innerHTML = h + "</div>";
+}
+
+// ---------- map (folder level graph, force layout)
+function renderMap() {
+  const base = view.path, c = children(base);
+  const nodes = [...c.dirs.map(d => ({id: d.path, label: d.path.split("/").pop() + "/", files: d.files, dir: true})),
+                 ...c.files.map(f => ({id: f.path, label: f.path.split("/").pop(), files: [f], dir: false}))];
+  if (!nodes.length) { $("#main").innerHTML = crumbs(base) + `<div class="empty">—</div>`; return; }
+  const idx = new Map(nodes.map((n, i) => [n.id, i])), w = new Map();
+  for (const s of D.symbols) {
+    const a = groupOf(s.file, base); if (a == null) continue;
+    for (const t of s.calls) { const ts = symById[t]; if (!ts) continue; const b = groupOf(ts.file, base); if (b == null || a === b) continue; const k = a + "→" + b; w.set(k, (w.get(k) || 0) + 1); }
+  }
+  const edges = [...w.entries()].map(([k, v]) => { const [a, b] = k.split("→"); return {a: idx.get(a), b: idx.get(b), v}; }).filter(e => e.a != null && e.b != null);
+  const W = $("#main").clientWidth || 900, H = (window.innerHeight - 52) || 700;
+  nodes.forEach((n, i) => { const ang = i / nodes.length * Math.PI * 2; n.x = W / 2 + Math.cos(ang) * W / 4; n.y = H / 2 + Math.sin(ang) * H / 4; const s = statusOf(n.files); n.st = s; n.w = Math.max(130, Math.min(220, n.label.length * 8 + 40)); n.h = 54; });
+  for (let it = 0; it < 300; it++) {
+    for (let i = 0; i < nodes.length; i++) for (let j = i + 1; j < nodes.length; j++) {
+      const A = nodes[i], B = nodes[j]; let dx = B.x - A.x, dy = B.y - A.y; const d2 = Math.max(dx * dx + dy * dy, 100), d = Math.sqrt(d2);
+      const f = 60000 / d2; dx /= d; dy /= d; A.x -= dx * f; A.y -= dy * f; B.x += dx * f; B.y += dy * f;
+    }
+    for (const e of edges) { const A = nodes[e.a], B = nodes[e.b]; const dx = B.x - A.x, dy = B.y - A.y; const k = 0.004 * Math.min(4, e.v); A.x += dx * k; A.y += dy * k; B.x -= dx * k; B.y -= dy * k; }
+    for (const n of nodes) { n.x += (W / 2 - n.x) * 0.01; n.y += (H / 2 - n.y) * 0.01; }
+  }
+  const sum = n => { const t = n.dir ? D.dirs[n.id + "/"]?.summary : n.files[0].summary; return t ? (t.length > 34 ? t.slice(0, 33) + "…" : t) : (n.dir ? `${n.files.length} files` : `${n.st.n} ${L.items}`); };
+  const maxV = Math.max(1, ...edges.map(e => e.v));
+  let svg = `<svg id="map"><defs><linearGradient id="pt" x1="0" y1="0" x2="0" y2="1"><stop offset="50%" stop-color="var(--ok)"/><stop offset="50%" stop-color="var(--missing)"/></linearGradient><marker id="ar" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="var(--muted)"/></marker></defs><g id="vp">`;
+  for (const e of edges) { const A = nodes[e.a], B = nodes[e.b]; svg += `<line x1="${A.x}" y1="${A.y}" x2="${B.x}" y2="${B.y}" style="stroke-width:${1 + 3 * e.v / maxV}" marker-end="url(#ar)"><title>${e.v}</title></line>`; }
+  for (const n of nodes) {
+    const col = n.st.cls === "ok" ? "var(--ok)" : n.st.cls === "stale" ? "var(--stale)" : n.st.cls === "partial" ? "url(#pt)" : "var(--missing)";
+    svg += `<g class="node" data-go="${esc(n.id)}" transform="translate(${n.x - n.w / 2},${n.y - n.h / 2})"><title>${esc(n.dir ? D.dirs[n.id + "/"]?.summary || n.id : n.files[0].summary || n.id)}</title>
+      <rect width="${n.w}" height="${n.h}" rx="10"/><rect width="5" height="${n.h}" rx="2" style="fill:${col};stroke:none"/>
+      <text x="16" y="22" style="font-weight:600">${esc(n.dir ? "📁 " : "📄 ")}${esc(n.label)}</text><text class="sub" x="16" y="40">${esc(sum(n))}</text></g>`;
+  }
+  svg += `</g></svg>`;
+  const dn = dirNote(base);
+  $("#main").innerHTML = crumbs(base).replace('class="crumbs"', 'class="crumbs" style="position:absolute;z-index:2"') + svg +
+    `<div class="hint">${dn ? esc(dn.summary) + "<br>" : ""}${L.hint}</div><div class="legend">${L.legend}</div>`;
+  panzoom($("#map"), $("#vp"));
+}
+function panzoom(svg, g) {
+  let s = 1, tx = 0, ty = 0, drag = null, moved = false;
+  const apply = () => g.setAttribute("transform", `translate(${tx},${ty}) scale(${s})`);
+  svg.onwheel = e => { e.preventDefault(); const k = e.deltaY < 0 ? 1.12 : 1 / 1.12; const r = svg.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top; tx = mx - (mx - tx) * k; ty = my - (my - ty) * k; s *= k; apply(); };
+  svg.onpointerdown = e => { drag = [e.clientX - tx, e.clientY - ty]; moved = false; };
+  svg.onpointermove = e => { if (!drag) return; tx = e.clientX - drag[0]; ty = e.clientY - drag[1]; moved = true; apply(); };
+  svg.onpointerup = () => { drag = null; };
+  svg.addEventListener("click", e => { if (moved) { e.stopPropagation(); moved = false; } }, true);
+}
+
+// ---------- live refresh when the agent writes explanations
+async function poll() {
+  try { const v = await (await fetch("/api/version")).text(); if (ver !== null && v !== ver) await load(); ver = v; } catch {}
+  setTimeout(poll, 2500);
+}
+function fromHash() { const h = decodeURIComponent(location.hash.slice(1)); const i = h.lastIndexOf("@"); view.path = i < 0 ? h : h.slice(0, i); view.focus = i < 0 ? null : h.slice(i + 1); }
+fromHash();
+window.addEventListener("hashchange", () => { const before = view.path + "@" + view.focus; fromHash(); if (D && before !== view.path + "@" + view.focus) { renderTree(); render(); } });
+load().then(poll);
+</script>
+</body>
+</html>
