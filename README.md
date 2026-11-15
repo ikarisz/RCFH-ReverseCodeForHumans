@@ -1,6 +1,6 @@
 # RCFH: Reverse Code For Humans
 
-**CodeAtlas** — a local, open-source map of your codebase, explained in plain human language by your AI agent, only when you ask.**
+**CodeAtlas** — a local, open-source map of your codebase, explained in plain human language by your AI agent, only when you ask.
 
 Sister project of [RSFA](https://github.com/ikarisz/RSFA-ReverseSkillsForAgents): RSFA reverses an app so **agents** can use it; RCFH reverses code so **humans** can understand it. Like Obsidian, but for code. A scanner draws the real structure of the project (folders → files → functions → who calls whom). Your AI agent (Claude Code, Codex, Cursor…) writes an explanation for each part that someone with **zero coding knowledge** can read. Explanations can stay beside the code or go *into* the code as comments, with a structural check that guarantees the code itself never changes.
 
