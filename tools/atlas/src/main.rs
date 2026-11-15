@@ -6,6 +6,7 @@
 //! `.atlas/notes/` (sidecar, never touches code) and can optionally be written
 //! into the source as comments, guarded by a comment-free AST equality check.
 
+mod check;
 mod inline;
 mod mcp;
 mod parse;
@@ -196,7 +197,20 @@ pub fn write_items(root: &Path, items: &[Value]) -> Result<Value, String> {
     let mut unknown = Vec::new();
     let mut empty = Vec::new();
     let now = store::now();
+    let mut problems: Vec<(String, check::Human)> = Vec::new();
     for it in items {
+        if let Some(pid) = it["problem"].as_str() {
+            let what = it["what"].as_str().or(it["summary"].as_str()).unwrap_or("").trim().to_string();
+            if what.is_empty() {
+                empty.push(pid.to_string());
+                continue;
+            }
+            let tries = it["try"].as_array().map(|a| a.iter().filter_map(|x| x.as_str().map(String::from)).collect()).unwrap_or_default();
+            problems.push((pid.to_string(), check::Human {
+                what, why: it["why"].as_str().unwrap_or("").trim().into(), fix: it["fix"].as_str().unwrap_or("").trim().into(), r#try: tries, at: 0,
+            }));
+            continue;
+        }
         let summary = it["summary"].as_str().unwrap_or("").trim().to_string();
         let detail = it["detail"].as_str().unwrap_or("").trim().to_string();
         let key = it["id"].as_str().or(it["file"].as_str()).or(it["dir"].as_str()).unwrap_or("?").to_string();
@@ -234,7 +248,10 @@ pub fn write_items(root: &Path, items: &[Value]) -> Result<Value, String> {
     if n_dir > 0 {
         store::save_dirs(root, &dirs)?;
     }
-    Ok(json!({"ok": unknown.is_empty() && empty.is_empty(), "symbols": n_sym, "files": n_file, "dirs": n_dir, "unknown": unknown, "empty_summary": empty}))
+    let refs: Vec<(&str, check::Human)> = problems.iter().map(|(i, h)| (i.as_str(), h.clone())).collect();
+    let (n_prob, unk) = if refs.is_empty() { (0, vec![]) } else { check::write_human(root, &refs) };
+    unknown.extend(unk);
+    Ok(json!({"ok": unknown.is_empty() && empty.is_empty(), "symbols": n_sym, "files": n_file, "dirs": n_dir, "problems": n_prob, "unknown": unknown, "empty_summary": empty}))
 }
 
 // ---------------------------------------------------------------- show
@@ -334,7 +351,7 @@ fn flag<'a>(args: &'a [String], n: &str) -> Option<&'a str> {
 }
 
 fn positional(args: &[String]) -> Vec<String> {
-    let with_val = ["--budget", "--limit", "--max-lines", "--lang", "--level", "--port"];
+    let with_val = ["--budget", "--limit", "--max-lines", "--lang", "--level", "--port", "--log", "--depth"];
     let mut v = Vec::new();
     let mut i = 0;
     while i < args.len() {
@@ -363,6 +380,12 @@ usage: atlas [-C ROOT] <command> [args]
   show <file | symbol-id | folder/>            print explanations in the terminal
   inline [scope...] [--apply]                  write explanations into the source as comments (AST-checked; dry run by default)
   uninline [scope...] [--apply]                remove every [atlas] comment block
+  check [scope...] [--tests]                   find errors: built-in syntax scan + the project's own checkers
+                                               (tsc, python, ruff, cargo check, go vet; --tests also runs the test suite)
+  debug -- <command ...>                       run a command, catch its errors / stack traces, map them to the code
+  debug --log <file | ->                       same, from error output you copied (a log, a terminal paste)
+  problems [scope...]                          read the problems in plain language, with commands to try yourself
+  trace <symbol-id | name> [--depth 3]         who calls this, and what it calls (what breaks if it breaks)
   vault                                        export an Obsidian vault to .atlas/vault/
   open [--port 7420] [--no-browser]            local map app at http://127.0.0.1:7420
   mcp                                          MCP server (stdio) with the same commands as tools
@@ -456,6 +479,45 @@ fn main() -> ExitCode {
         "inline" => fresh_graph(&root).and_then(|g| inline::run(&root, &g, &positional(rest), rest.iter().any(|a| a == "--apply"), false)),
         "uninline" => fresh_graph(&root).and_then(|g| inline::run(&root, &g, &positional(rest), rest.iter().any(|a| a == "--apply"), true)),
         "vault" => vault(&root),
+        "check" => match check::check(&root, &positional(rest), rest.iter().any(|a| a == "--tests")) {
+            Ok(v) => {
+                let ok = v["ok"].as_bool() == Some(true);
+                out(&v);
+                return if ok { ExitCode::SUCCESS } else { ExitCode::from(1) };
+            }
+            Err(e) => Err(e),
+        },
+        "debug" => {
+            let cmd = rest.iter().position(|a| a == "--").map(|i| rest[i + 1..].join(" ")).filter(|c| !c.is_empty());
+            let log = match flag(rest, "--log") {
+                Some("-") => {
+                    let mut s = String::new();
+                    let _ = std::io::Read::read_to_string(&mut std::io::stdin(), &mut s);
+                    Some(s)
+                }
+                Some(f) => match fs::read_to_string(root.join(f)).or_else(|_| fs::read_to_string(f)) {
+                    Ok(t) => Some(t),
+                    Err(e) => return fail(format!("{f}: {e}")),
+                },
+                None => None,
+            };
+            check::debug(&root, cmd.as_deref(), log, false)
+        }
+        "problems" => {
+            println!("{}", check::problems_text(&root, &positional(rest)));
+            return ExitCode::SUCCESS;
+        }
+        "trace" => {
+            let Some(k) = positional(rest).first().cloned() else { return fail("usage: atlas trace <symbol-id | name> [--depth 3]") };
+            let depth = flag(rest, "--depth").and_then(|d| d.parse().ok()).unwrap_or(3);
+            match fresh_graph(&root).and_then(|g| check::trace_text(&root, &g, &k, depth)) {
+                Ok(t) => {
+                    println!("{t}");
+                    return ExitCode::SUCCESS;
+                }
+                Err(e) => Err(e),
+            }
+        }
         "open" | "serve" => {
             let port = flag(rest, "--port").and_then(|p| p.parse().ok()).unwrap_or(7420);
             return match serve::run(&root, port, !rest.iter().any(|a| a == "--no-browser")) {

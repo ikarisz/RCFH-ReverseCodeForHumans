@@ -33,11 +33,16 @@ fn data(root: &Path) -> Value {
         }
     }
     let name = root.canonicalize().ok().and_then(|p| p.file_name().map(|n| n.to_string_lossy().to_string())).unwrap_or_default();
-    json!({"name": name, "config": store::config(root), "files": files, "symbols": g.symbols, "notes": notes, "dirs": store::load_dirs(root)})
+    let pr = crate::check::load(root);
+    json!({"name": name, "config": store::config(root), "files": files, "symbols": g.symbols, "notes": notes, "dirs": store::load_dirs(root),
+           "problems": pr.problems, "checked_at": pr.at, "runs": pr.runs})
 }
 
 fn version(root: &Path) -> u64 {
     let mut v = 0u64;
+    if let Ok(m) = fs::metadata(store::atlas_dir(root).join("problems.json")).and_then(|m| m.modified()) {
+        v = v.wrapping_add(m.duration_since(UNIX_EPOCH).map(|d| d.as_millis() as u64).unwrap_or(0));
+    }
     let mut stack: Vec<PathBuf> = vec![store::atlas_dir(root).join("notes")];
     while let Some(d) = stack.pop() {
         let Ok(rd) = fs::read_dir(&d) else { continue };

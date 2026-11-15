@@ -204,7 +204,7 @@ pub fn save_graph(root: &Path, g: &Graph) -> Result<(), String> {
     fs::create_dir_all(&d).map_err(|e| e.to_string())?;
     let gi = d.join(".gitignore");
     if !gi.exists() {
-        let _ = fs::write(&gi, "graph.json\nvault/\n");
+        let _ = fs::write(&gi, "graph.json\nvault/\nproblems.json\ntmp.json\ntmp.log\n");
     }
     fs::write(d.join("graph.json"), serde_json::to_string(g).unwrap()).map_err(|e| e.to_string())
 }

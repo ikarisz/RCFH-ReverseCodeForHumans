@@ -62,6 +62,44 @@ atlas inline src/checkout --apply   # write [atlas] comments, AST-verified
 atlas uninline --apply              # remove them all again
 ```
 
+## Find and explain errors
+
+```
+/atlas check                      find errors in the project and explain them in plain language
+/atlas debug npm run build        run something that crashes, then explain why
+(paste an error) what does this mean?
+```
+
+`atlas check` runs a built-in syntax scan plus whatever checkers the project already has (TypeScript `tsc`, Python, `ruff`, `cargo check`, `go vet`; `--tests` also runs the test suite). `atlas debug -- <command>` runs any command and reads its errors and stack traces. Every problem is pinned to **the function it is in**, with:
+
+- the code around it, with the broken line marked
+- who else is affected: the functions that call it
+- the path a crash took through your code
+- **commands you can run yourself**, both to see the problem and to confirm it's fixed
+
+The agent then adds *what happened / why / how to fix* in plain language. You can read it here:
+
+```bash
+atlas problems                # in the terminal
+atlas open                    # the Problems tab; broken functions are red on the wiring diagram
+atlas trace checkout          # who calls this, and what it calls (what breaks if it breaks)
+```
+
+Example (`atlas problems`, Thai):
+
+```
+━━ 2. [ผิดพลาด] py/shop.py:6  (checkout)
+เกิดอะไรขึ้น: ตอนกดชำระเงิน โปรแกรมหยุดทำงาน เพราะมีสินค้าชิ้นหนึ่งในตะกร้าที่ไม่มีราคา
+ทำไม: ส่วน checkout รวมราคาสินค้าทุกชิ้น แต่ข้อมูลจาก load_cart มีชิ้นที่ไม่มีราคา (KeyError = หาช่องข้อมูลชื่อนี้ไม่เจอ)
+วิธีแก้:
+1. ตรวจว่าสินค้าทุกชิ้นใน load_cart มีราคาครบ (ต้นเหตุจริง)
+2. หรือเปลี่ยน i["price"] เป็น i.get("price", 0)
+>    6 |     return sum(i["price"] for i in items)
+ลองรันเอง:
+  $ python py/shop.py
+  $ atlas debug -- python py/shop.py
+```
+
 ## Commands
 
 ```
@@ -73,6 +111,11 @@ write <file.json | ->
 show <file | file#symbol | folder/>
 inline [scope...] [--apply]
 uninline [scope...] [--apply]
+check [scope...] [--tests]             find errors (syntax + tsc / python / ruff / cargo / go vet)
+debug -- <command ...>                 run a command, map its errors / stack traces to the code
+debug --log <file | ->                 same, from copied error output
+problems [scope...]                    problems in plain language + commands to try
+trace <symbol | name> [--depth 3]      callers and callees (impact of a change or failure)
 vault
 open [--port 7420] [--no-browser]
 mcp
@@ -85,6 +128,7 @@ mcp
 ├─ config.json        language + level           (commit)
 ├─ notes/**.json      the explanations           (commit — they are the documentation)
 ├─ graph.json         scanned structure          (git-ignored, rebuilt any time)
+├─ problems.json      last check / debug results (git-ignored)
 └─ vault/             Obsidian export            (git-ignored)
 ```
 
@@ -105,6 +149,8 @@ RCFH (CodeAtlas) คือแอปที่รันบนเครื่อง
 - **รู้ว่าคำอธิบายไหนล้าสมัย** ถ้าโค้ดเปลี่ยน แผนที่จะขึ้นสีส้ม และ `/atlas --changed` จะอธิบายเฉพาะส่วนที่เปลี่ยน
 - **เขียนลงในโค้ดได้แบบไม่ทำให้โค้ดพัง** `atlas inline --apply` จะตรวจโครงสร้างโค้ดว่าเหมือนเดิม 100% ก่อนบันทึก และ `atlas uninline --apply` ลบออกได้หมด
 - **แผนผังสายไฟ (`atlas open`)** ในกล่องของแต่ละไฟล์จะมีรายชื่อทุกฟังก์ชัน และมีสายลากจากฟังก์ชันที่เรียกไปหาฟังก์ชันที่ถูกเรียกแบบตัวต่อตัว ชี้ที่ชื่อเพื่อเน้นเฉพาะสายของมัน
+- **ตรวจหา error แล้วอธิบายเป็นภาษาคน** ใช้ `/atlas check` ตรวจทั้งโปรเจกต์ หรือ `/atlas debug <คำสั่ง>` รันแล้วจับว่าพังตรงไหน ทุกปัญหาจะบอกว่าอยู่ในฟังก์ชันไหน มีส่วนไหนได้รับผลกระทบ เกิดอะไรขึ้น ทำไม แก้ยังไง และมี **คำสั่งให้ลองรันเอง** อ่านได้ด้วย `atlas problems` หรือแท็บ "ปัญหา" ในแอป
+- **`atlas trace <ชื่อฟังก์ชัน>`** ดูว่าใครเรียกฟังก์ชันนี้ และมันเรียกอะไร เพื่อรู้ว่าถ้าแก้หรือพังจะกระทบตรงไหน
 - เปิดแผนที่ด้วย `atlas open` หรือเปิดใน Obsidian ด้วย `atlas vault`
 
 ## License

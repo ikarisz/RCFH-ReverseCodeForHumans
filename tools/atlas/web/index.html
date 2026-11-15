@@ -17,14 +17,14 @@
 :root{
   --paper:#fbfaf6; --sheet:#eef0ea; --panel:#ffffff; --head:#f5f5f0; --ink:#1b2126; --ink-2:#56606a; --ink-3:#8a929a;
   --rule:#e1e3dc; --rule-2:#cfd3ca; --grid:#dde1d7; --wire:#2c6e74; --wire-2:#9aa9a4; --hot:#c2410c; --route-soft:#2c6e7426;
-  --sel:#e7eee9; --focus:#2c6e74; --ok:#2f7a4c; --stale:#b0611c; --none:#9aa1a7; --code:#f3f2ec;
+  --sel:#e7eee9; --focus:#2c6e74; --bad:#b42318; --bad-soft:#b4231814; --ok:#2f7a4c; --stale:#b0611c; --none:#9aa1a7; --code:#f3f2ec;
   --sans:"Plex Thai","Leelawadee UI","Noto Sans Thai","Thonburi","Segoe UI",system-ui,sans-serif;
   --mono:"Plex Mono","Cascadia Mono",Consolas,ui-monospace,monospace;
 }
 @media (prefers-color-scheme:dark){:root{
   --paper:#15191c; --sheet:#101316; --panel:#1b2024; --head:#20262b; --ink:#e6e8e3; --ink-2:#a3aaa6; --ink-3:#737b78;
   --rule:#272d31; --rule-2:#363d42; --grid:#1a1f23; --wire:#6fb3b8; --wire-2:#4a5558; --hot:#fb923c; --route-soft:#6fb3b822;
-  --sel:#1f2a2a; --focus:#7cc3c8; --ok:#5fb383; --stale:#e09450; --none:#6d7478; --code:#101316;
+  --sel:#1f2a2a; --focus:#7cc3c8; --bad:#f2786b; --bad-soft:#f2786b1c; --ok:#5fb383; --stale:#e09450; --none:#6d7478; --code:#101316;
 }}
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:var(--paper);color:var(--ink);font:15px/1.65 var(--sans);-webkit-font-smoothing:antialiased}
@@ -37,20 +37,24 @@ button{background:none;border:0;padding:0;cursor:pointer}
 
 #app{display:grid;grid-template-columns:272px 1fr;grid-template-rows:56px 1fr;height:100vh}
 header{grid-column:1/3;display:flex;align-items:center;gap:20px;padding:0 20px;border-bottom:1px solid var(--rule);background:var(--paper)}
-.brand{display:flex;align-items:baseline;gap:10px;min-width:232px}
+.brand{display:flex;align-items:baseline;gap:10px;min-width:232px;margin-right:auto}
 .brand b{font-weight:600;font-size:16px}
 .brand span{color:var(--ink-3);font-size:12px;letter-spacing:.8px;text-transform:uppercase}
-.find{flex:1;max-width:520px;position:relative}
-#search{width:100%;padding:7px 34px;border:1px solid var(--rule-2);border-radius:6px;background:var(--panel)}
+.find{display:block;position:relative;margin:0 2px 14px}
+#search{width:100%;padding:4px 26px 4px 27px;font-size:13px;border:1px solid var(--rule-2);border-radius:5px;background:var(--panel)}
 #search::placeholder{color:var(--ink-3)}
-.find svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--ink-3)}
-.find kbd{position:absolute;right:9px;top:50%;transform:translateY(-50%)}
+#search::-webkit-search-cancel-button{display:none}
+.find svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--ink-3)}
+.find kbd{position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:10px;padding:0 4px}
 kbd{font-family:var(--mono);font-size:11px;border:1px solid var(--rule-2);border-bottom-width:2px;border-radius:4px;padding:0 5px;color:var(--ink-2);background:var(--panel)}
 .seg{display:flex;border:1px solid var(--rule-2);border-radius:6px;overflow:hidden}
 .seg button{padding:5px 14px;color:var(--ink-2)}
 .seg button+button{border-left:1px solid var(--rule-2)}
 .seg button[aria-pressed=true]{background:var(--ink);color:var(--paper)}
-.cov{margin-left:auto;text-align:right;line-height:1.25}
+.cov{text-align:right;line-height:1.25}
+.seg .pc{display:inline-block;min-width:18px;margin-left:6px;padding:0 5px;border-radius:9px;background:var(--bad);color:#fff;font-size:11.5px;line-height:17px;text-align:center;font-variant-numeric:tabular-nums}
+.seg button[aria-pressed=true] .pc{background:var(--paper);color:var(--bad)}
+.tree .pc{color:var(--bad);font-size:11.5px;font-weight:600;font-variant-numeric:tabular-nums}
 .cov b{font-weight:600;font-variant-numeric:tabular-nums}
 .cov small{display:block;color:var(--ink-3);font-size:12px}
 .cov i{display:block;height:3px;margin-top:5px;background:var(--rule);border-radius:2px;overflow:hidden;width:150px}
@@ -108,6 +112,37 @@ h1{font-size:26px;line-height:1.3;font-weight:600;margin:0;display:flex;align-it
 .codebtn:hover{color:var(--wire)}
 pre.code{margin:10px 0 0;background:var(--code);border:1px solid var(--rule);border-radius:6px;padding:12px 14px;font:12.5px/1.6 var(--mono);overflow:auto;max-height:440px;tab-size:2}
 
+/* problems */
+.prob{padding:20px 0;border-bottom:1px solid var(--rule)}
+.prob.focus{background:linear-gradient(90deg,var(--bad-soft),transparent 70%)}
+.p-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13.5px}
+.p-h .loc{font-family:var(--mono);font-size:13px;color:var(--ink);text-decoration:none;cursor:pointer;border-bottom:1px dotted var(--ink-3)}
+.p-h .loc:hover{color:var(--wire);border-bottom-color:var(--wire)}
+.sev{font-size:11.5px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--bad)}
+.sev.warning{color:var(--stale)}
+.qa{margin:8px 0 0;display:grid;grid-template-columns:auto 1fr;gap:6px 14px;max-width:66ch}
+.qa dt{color:var(--ink-3);font-size:13px;padding-top:2px;white-space:nowrap}
+.qa dd{margin:0;white-space:pre-wrap}
+.raw{margin-top:8px;font:12px/1.5 var(--mono);color:var(--ink-3)}
+.snip{margin:10px 0 0;background:var(--code);border:1px solid var(--rule);border-radius:6px;padding:8px 0;font:12.5px/1.6 var(--mono);overflow:auto}
+.snip div{padding:0 12px;white-space:pre}
+.snip .hit{background:var(--bad-soft);box-shadow:inset 3px 0 var(--bad)}
+.cmds{margin-top:10px;display:flex;flex-direction:column;gap:6px;max-width:66ch}
+.cmds .lab{font-size:13px;color:var(--ink-3)}
+.cmd{display:flex;align-items:center;gap:10px;background:var(--code);border:1px solid var(--rule);border-radius:6px;padding:5px 6px 5px 10px}
+.cmd code{flex:1;font:12.5px var(--mono);overflow:auto;white-space:nowrap}
+.cmd code::before{content:"$ ";color:var(--ink-3)}
+.cmd button{font-size:12px;color:var(--wire);padding:2px 8px;border:1px solid var(--rule-2);border-radius:4px;background:var(--panel)}
+.runs{margin:12px 0 0;padding:0;list-style:none;font-size:13px;color:var(--ink-2);display:grid;gap:3px}
+.runs li{display:flex;gap:8px;align-items:baseline}
+.runs code{font:12px var(--mono);color:var(--ink-3)}
+.pbox{margin-top:10px;border-left:3px solid var(--bad);background:var(--bad-soft);padding:8px 12px;border-radius:0 6px 6px 0;font-size:14px;max-width:62ch}
+.pbox b{color:var(--bad);font-weight:600}
+.pbox a{color:var(--wire);cursor:pointer;font-size:13px;margin-left:6px}
+.cw .fn.err span{color:var(--bad)}
+.cw .fn .bang{flex:none;color:#fff;background:var(--bad);border-radius:3px;font:700 9.5px/13px var(--sans);padding:0 4px;margin-left:auto}
+.cw .ft .bad{color:var(--bad);font-weight:600;margin-left:auto}
+
 /* wiring map */
 #mapwrap{position:absolute;inset:0;background:var(--sheet)}
 #map{width:100%;height:100%;display:block;cursor:grab;touch-action:none}
@@ -152,7 +187,7 @@ pre.code{margin:10px 0 0;background:var(--code);border:1px solid var(--rule);bor
 .zoom button+button{border-top:1px solid var(--rule-2)}
 .zoom button:hover{background:var(--sel);color:var(--ink)}
 .empty{padding:60px 40px;color:var(--ink-3)}
-@media (max-width:820px){#app{grid-template-columns:1fr}aside{display:none}header{grid-column:1;gap:10px}.brand{min-width:0}.brand span,.cov small,.find kbd{display:none}.page{padding:20px 16px 60px}.entry{grid-template-columns:1fr}.gut{flex-direction:row}.legend{display:none}}
+@media (max-width:820px){#app{grid-template-columns:1fr}aside{display:none}header{grid-column:1;gap:10px}.brand{min-width:0}.brand span,.cov small{display:none}.page{padding:20px 16px 60px}.entry{grid-template-columns:1fr}.gut{flex-direction:row}.legend{display:none}}
 @media (prefers-reduced-motion:no-preference){.tree a,.row-t,.routes a,.wire{transition:color .12s,background-color .12s,opacity .12s}}
 </style>
 </head>
@@ -160,12 +195,11 @@ pre.code{margin:10px 0 0;background:var(--code);border:1px solid var(--rule);bor
 <div id="app">
   <header>
     <div class="brand"><b id="pname">CodeAtlas</b><span>CodeAtlas</span></div>
-    <label class="find"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
-      <input id="search" type="search" autocomplete="off" aria-label="search"><kbd>/</kbd></label>
-    <div class="seg" role="group"><button id="tMap" aria-pressed="true"></button><button id="tRead" aria-pressed="false"></button></div>
+    <div class="seg" role="group"><button id="tMap" aria-pressed="true"></button><button id="tRead" aria-pressed="false"></button><button id="tProb" aria-pressed="false"></button></div>
     <div class="cov" aria-live="polite"><b id="covN">–</b> <small id="covL"></small><i><u id="covBar" style="width:0"></u></i></div>
   </header>
-  <aside><div class="label" id="idxLabel"></div><nav class="tree" id="tree"></nav></aside>
+  <aside><label class="find"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input id="search" type="search" autocomplete="off" aria-label="search"><kbd>/</kbd></label>
+    <div class="label" id="idxLabel"></div><nav class="tree" id="tree"></nav></aside>
   <main id="main"><div class="empty" id="loading">…</div></main>
 </div>
 <script>
@@ -176,6 +210,9 @@ const T = {
        inside:"ข้างใน", inFile:"ส่วนต่าง ๆ ในไฟล์นี้", results:"ผลการค้นหา", none:"ไม่พบสิ่งที่ค้นหา", legend:"วิธีอ่านแผนผัง",
        lOk:"อธิบายแล้ว", lPart:"อธิบายบางส่วน", lStale:"โค้ดเปลี่ยนแล้ว", lNone:"ยังไม่อธิบาย", lWire:"สาย: ส่วนซ้ายเรียกใช้ส่วนที่ลูกศรชี้", lInt:"เรียกกันเองในไฟล์เดียวกัน",
        tip:"ชี้ที่ชื่อฟังก์ชันเพื่อเน้นสายของมัน · คลิกเพื่ออ่านคำอธิบาย · ลากเพื่อเลื่อน · scroll เพื่อซูม", scanning:"กำลังอ่านโครงสร้างโปรเจกต์…", fit:"พอดีจอ",
+       problems:"ปัญหา", whatH:"เกิดอะไรขึ้น", whyH:"ทำไม", fixH:"วิธีแก้", affects:"กระทบ", tryIt:"ลองรันเองได้", toolSays:"เครื่องมือแจ้งว่า", orig:"ข้อความต้นฉบับ",
+       noHuman:"ยังไม่มีคำอธิบายภาษาคน — ให้ AI อธิบายด้วยคำสั่ง", noProblems:"ไม่พบปัญหา", neverChecked:"ยังไม่เคยตรวจ — ลองรันคำสั่งนี้ในโฟลเดอร์โปรเจกต์ หรือสั่ง AI ว่า /atlas check",
+       checked:"ตรวจล่าสุด", checkedBy:"สิ่งที่ตรวจ", skipped:"ข้าม", error:"ผิดพลาด", warning:"เตือน", path:"เส้นทางที่เกิดเหตุ", details:"ดูรายละเอียด", here:"ปัญหาตรงนี้",
        callers:"ผู้เรียก", callees:"ถูกเรียก", alone:"ไม่ได้เชื่อมกับส่วนอื่นในโฟลเดอร์นี้", more:"และอีก", noparts:"ไม่มีฟังก์ชัน",
        kinds:{function:"งาน",method:"งานย่อย",class:"แม่แบบ",struct:"รูปแบบข้อมูล",interface:"รูปแบบข้อมูล",type:"รูปแบบข้อมูล",enum:"ชุดตัวเลือก",trait:"ข้อตกลง",macro:"ทางลัด"},
        langs:{python:"Python",rust:"Rust",go:"Go",typescript:"TypeScript",tsx:"TypeScript (React)",javascript:"JavaScript"}},
@@ -185,13 +222,16 @@ const T = {
        inside:"Inside", inFile:"Parts of this file", results:"Results", none:"Nothing found", legend:"Reading the diagram",
        lOk:"explained", lPart:"partly", lStale:"code changed", lNone:"not yet", lWire:"wire: left part calls the part the arrow points to", lInt:"call within the same file",
        tip:"Hover a function to trace its wires · click to read it · drag to pan · scroll to zoom", scanning:"Reading the project structure…", fit:"Fit",
+       problems:"Problems", whatH:"What happened", whyH:"Why", fixH:"How to fix", affects:"Affects", tryIt:"Try it yourself", toolSays:"The tool says", orig:"original message",
+       noHuman:"No plain-language explanation yet — ask your agent", noProblems:"No problems found", neverChecked:"Not checked yet — run this in the project folder, or ask your agent: /atlas check",
+       checked:"Last checked", checkedBy:"Checks run", skipped:"skipped", error:"error", warning:"warning", path:"Path to the error", details:"details", here:"Problem here",
        callers:"callers", callees:"called", alone:"not connected to anything else here", more:"and", noparts:"no functions",
        kinds:{}, langs:{python:"Python",rust:"Rust",go:"Go",typescript:"TypeScript",tsx:"TypeScript (React)",javascript:"JavaScript"}}
 };
 let D = null, L = T.th, view = {mode:"map", path:"", focus:null, q:""}, ver = null;
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const symById = {}; let calledBy = {};
+const symById = {}; let calledBy = {}, probBySym = {}, probByFile = {};
 $("#loading").textContent = T.th.scanning;
 
 // ---------- glyphs: status markers (shape + colour), folder & file-type icons
@@ -233,6 +273,10 @@ async function load() {
   calledBy = {};
   for (const s of D.symbols) symById[s.id] = s;
   for (const s of D.symbols) for (const c of s.calls) (calledBy[c] ||= []).push(s.id);
+  probBySym = {}; probByFile = {};
+  for (const p of D.problems || []) { if (p.symbol) (probBySym[p.symbol] ||= []).push(p); (probByFile[p.file] ||= []).push(p); }
+  const pn = (D.problems || []).length;
+  $("#tProb").innerHTML = `${L.problems}${pn ? `<span class="pc">${pn}</span>` : ""}`;
   const all = D.symbols.length, ok = D.symbols.filter(s => D.notes[s.id]?.status === "ok").length;
   $("#covN").textContent = `${ok} ${L.of} ${all}`; $("#covL").textContent = L.explained;
   $("#covBar").style.width = (all ? ok / all * 100 : 0) + "%";
@@ -264,16 +308,17 @@ function renderTree() {
   const out = [], open = new Set();
   let p = view.path; while (p) { open.add(p); p = dirOf(p); }
   const cur = x => view.path === x ? ' aria-current="page"' : "";
+  const pcount = pre => { let n = 0; for (const f in probByFile) if (f === pre || f.startsWith(pre + "/")) n += probByFile[f].length; return n ? `<span class="pc" title="${L.problems}">${n}</span>` : ""; };
   const walk = (path, depth) => {
     const c = children(path), pad = 8 + depth * 14;
     for (const d of c.dirs) {
       const s = statusOf(d.files), o = open.has(d.path);
-      out.push(`<a data-go="${esc(d.path)}"${cur(d.path)} style="padding-left:${pad}px"><span class="chev">${o ? "▾" : "▸"}</span>${folderIcon(o)}<span class="nm">${esc(base(d.path))}</span>${marker(s.cls, 9)}</a>`);
+      out.push(`<a data-go="${esc(d.path)}"${cur(d.path)} style="padding-left:${pad}px"><span class="chev">${o ? "▾" : "▸"}</span>${folderIcon(o)}<span class="nm">${esc(base(d.path))}</span>${pcount(d.path)}${marker(s.cls, 9)}</a>`);
       if (o) walk(d.path, depth + 1);
     }
     for (const f of c.files) {
       const s = statusOf([f]);
-      out.push(`<a data-go="${esc(f.path)}"${cur(f.path)} style="padding-left:${pad}px" title="${esc(f.summary || "")}"><span class="chev"></span>${fileIcon(f.path)}<span class="nm">${esc(base(f.path))}</span>${marker(s.cls, 9)}</a>`);
+      out.push(`<a data-go="${esc(f.path)}"${cur(f.path)} style="padding-left:${pad}px" title="${esc(f.summary || "")}"><span class="chev"></span>${fileIcon(f.path)}<span class="nm">${esc(base(f.path))}</span>${pcount(f.path)}${marker(s.cls, 9)}</a>`);
     }
   };
   out.push(`<a data-go=""${cur("")}><span class="chev"></span>${folderIcon(true)}<span class="nm" style="font-weight:600">${esc(D.name)}</span></a>`);
@@ -290,6 +335,7 @@ function go(path, focus, mode) {
 }
 $("#tMap").onclick = () => { view.mode = "map"; if (fileOf(view.path)) { view.focus = null; view.path = dirOf(view.path); } setHash(); renderTree(); render(); };
 $("#tRead").onclick = () => { view.mode = "read"; render(); };
+$("#tProb").onclick = () => { view.mode = "problems"; view.focus = null; render(); };
 $("#search").oninput = e => { view.q = e.target.value.trim(); render(); };
 document.addEventListener("keydown", e => {
   if (e.key === "/" && document.activeElement !== $("#search")) { e.preventDefault(); $("#search").focus(); }
@@ -298,6 +344,7 @@ document.addEventListener("keydown", e => {
 document.addEventListener("click", e => {
   const a = e.target.closest("[data-go]"); if (a) { e.preventDefault(); go(a.dataset.go, null); return; }
   const s = e.target.closest("[data-sym]"); if (s) { e.preventDefault(); const sy = symById[s.dataset.sym]; if (sy) go(sy.file, sy.id, "read"); return; }
+  const pr = e.target.closest("[data-prob]"); if (pr) { e.preventDefault(); view.mode = "problems"; view.focus = pr.dataset.prob; view.q = ""; render(); return; }
   const w = e.target.closest("[data-wire]"); if (w) { const sy = symById[w.dataset.wire]; if (sy) go(dirOf(sy.file), sy.id, "map"); return; }
   const c = e.target.closest("[data-code]"); if (c) return toggleCode(c);
   const cp = e.target.closest("[data-copy]"); if (cp) { navigator.clipboard?.writeText(cp.dataset.copy).then(() => { cp.textContent = L.copied; setTimeout(() => cp.textContent = L.copy, 1400); }); }
@@ -311,9 +358,10 @@ function trail(path) {
 
 // ---------- views
 function render() {
-  if (D && fileOf(view.path)) view.mode = "read";
-  $("#tMap").setAttribute("aria-pressed", view.mode === "map"); $("#tRead").setAttribute("aria-pressed", view.mode === "read");
+  if (D && fileOf(view.path) && view.mode !== "problems") view.mode = "read";
+  $("#tMap").setAttribute("aria-pressed", view.mode === "map"); $("#tRead").setAttribute("aria-pressed", view.mode === "read"); $("#tProb").setAttribute("aria-pressed", view.mode === "problems");
   if (view.q) return renderSearch();
+  if (view.mode === "problems") return renderProblems();
   if (fileOf(view.path)) return renderFile(view.path);
   return view.mode === "map" ? renderMap() : renderFolder(view.path);
 }
@@ -348,6 +396,7 @@ function entry(s) {
     <div>
       <div class="e-h"><span class="name">${esc(s.name.split(".").pop())}</span><span class="kind" title="${esc(s.kind)}">${esc(kindLabel(s.kind))}</span>${flag}</div>
       ${n.summary ? `<p class="sum">${esc(n.summary)}</p>${n.detail ? `<div class="prose">${esc(n.detail)}</div>` : ""}` : `<div class="ask">${L.ask} <code>/atlas ${esc(s.id)}</code><button data-copy="/atlas ${esc(s.id)}">${L.copy}</button></div>`}
+      ${(probBySym[s.id] || []).map(p => `<div class="pbox"><b>${L.here}:</b> ${esc(p.human?.what || p.message)}<a data-prob="${esc(p.id)}">${L.details} →</a></div>`).join("")}
       ${uses.length || by.length ? `<dl class="routes">${uses.length ? `<dt>→ ${L.uses}</dt><dd>${uses.map(link).join("")}</dd>` : ""}${by.length ? `<dt>← ${L.usedBy}</dt><dd>${by.map(link).join("")}</dd>` : ""}</dl>` : ""}
       <div class="acts"><button class="codebtn" data-code="${esc(s.file)}|${s.start}|${s.end}" aria-expanded="false"><span class="mono">{ }</span> <span>${L.code}</span> <span class="mono" style="color:var(--ink-3)">${s.start}–${s.end}</span></button>
       ${uses.length || by.length ? `<button class="codebtn" data-wire="${esc(s.id)}"><span class="mono">⟶</span> <span>${L.wires}</span></button>` : ""}</div>
@@ -385,6 +434,38 @@ function renderSearch() {
   for (const s of hits) { const n = D.notes[s.id]; h += `<a class="row" data-sym="${esc(s.id)}">${fileIcon(s.file, 20)}<div><div class="row-t"><span class="mono">${esc(s.name)}</span><span class="kind">${esc(kindLabel(s.kind))}</span></div><p>${n?.summary ? esc(n.summary) : `<span class="mono">${esc(s.file)}</span>`}</p></div><div class="n">L${s.start} ${marker(n?.status || "missing", 9)}</div></a>`; }
   if (!fh.length && !hits.length) h += `<p class="empty" style="padding:24px 0">${L.none}</p>`;
   $("#main").innerHTML = h + "</div>";
+}
+
+// ---------- problems: every error with a plain-language explanation and commands to try
+function cmdRow(c) { return `<div class="cmd"><code>${esc(c)}</code><button data-copy="${esc(c)}">${L.copy}</button></div>`; }
+function renderProblems() {
+  const ps = D.problems || [], errs = ps.filter(p => p.severity === "error").length;
+  let h = `<div class="page"><div class="trail">${esc(D.name)}</div><h1>${L.problems}</h1>`;
+  if (!D.checked_at) {
+    h += `<p class="lead">${L.neverChecked}</p><div class="cmds">${cmdRow("atlas check")}${cmdRow("atlas debug -- npm run dev")}</div>`;
+    $("#main").innerHTML = h + "</div>"; return;
+  }
+  const when = new Date(D.checked_at * 1000).toLocaleString(document.documentElement.lang === "th" ? "th-TH" : undefined);
+  h += `<div class="meta"><span>${errs} ${L.error}</span><span>${ps.length - errs} ${L.warning}</span><span>${L.checked}: ${esc(when)}</span></div>`;
+  if ((D.runs || []).length) h += `<ul class="runs">${D.runs.map(r => `<li>${r.skipped ? "–" : r.ok ? "✓" : "✗"} <span>${esc(r.tool)}</span> <code>${esc(r.cmd)}</code>${r.skipped ? ` <span style="color:var(--stale)">${L.skipped}: ${esc(r.skipped)}</span>` : ""}</li>`).join("")}</ul>`;
+  if (!ps.length) h += `<p class="lead">${marker("ok", 12)} ${L.noProblems}</p><div class="cmds">${cmdRow("atlas check")}</div>`;
+  for (const p of ps) {
+    const s = p.symbol && symById[p.symbol], hm = p.human;
+    const snip = (p.snippet || "").split("\n").filter(Boolean).map(l => `<div class="${l.startsWith(">") ? "hit" : ""}">${esc(l.slice(2))}</div>`).join("");
+    const cmds = [...new Set([...(hm?.try || []), ...(p.rerun || [])])];
+    h += `<div class="prob ${view.focus === p.id ? "focus" : ""}" id="p-${esc(p.id)}">
+      <div class="p-h"><span class="sev ${esc(p.severity)}">${p.severity === "error" ? L.error : L.warning}</span>
+        <a class="loc" ${s ? `data-sym="${esc(s.id)}"` : `data-go="${esc(p.file)}"`}>${esc(p.file)}:${p.line}</a>
+        ${s ? `<span class="mono">${esc(s.name)}</span>` : ""}<span class="kind">${esc(p.tool)}${p.code ? " · " + esc(p.code) : ""}</span></div>
+      ${hm ? `<p class="sum">${esc(hm.what)}</p><dl class="qa">${hm.why ? `<dt>${L.whyH}</dt><dd>${esc(hm.why)}</dd>` : ""}${hm.fix ? `<dt>${L.fixH}</dt><dd>${esc(hm.fix)}</dd>` : ""}${p.affects?.length ? `<dt>${L.affects}</dt><dd class="mono">${p.affects.map(esc).join(", ")}</dd>` : ""}</dl><div class="raw">${L.orig}: ${esc(p.message)}</div>`
+           : `<p class="sum">${L.toolSays}: <span class="mono">${esc(p.message)}</span></p>${p.affects?.length ? `<dl class="qa"><dt>${L.affects}</dt><dd class="mono">${p.affects.map(esc).join(", ")}</dd></dl>` : ""}<div class="ask">${L.noHuman} <code>/atlas check ${esc(p.file)}</code><button data-copy="/atlas check ${esc(p.file)}">${L.copy}</button></div>`}
+      ${p.frames?.length > 1 ? `<dl class="routes"><dt>${L.path}</dt><dd>${p.frames.map(f => f.symbol && symById[f.symbol] ? `<a data-sym="${esc(f.symbol)}" href="#">${esc(symById[f.symbol].name)}:${f.line}</a>` : `<span class="mono">${esc(base(f.file))}:${f.line}</span>`).join(" ← ")}</dd></dl>` : ""}
+      ${snip ? `<div class="snip">${snip}</div>` : ""}
+      ${cmds.length ? `<div class="cmds"><div class="lab">${L.tryIt}</div>${cmds.map(cmdRow).join("")}</div>` : ""}
+    </div>`;
+  }
+  $("#main").innerHTML = h + "</div>";
+  if (view.focus) document.getElementById("p-" + view.focus)?.scrollIntoView({block: "start"});
 }
 
 // ---------- wiring map
@@ -473,7 +554,8 @@ function renderMap() {
   const card = n => {
     const note = n.dir ? D.dirs[n.id + "/"]?.summary : n.files[0].summary;
     const rows = n.rows.map(r => { const st = D.notes[r.s.id]?.status || "missing";
-      return `<div class="fn${r.sub ? " sub" : ""}" data-s="${esc(r.s.id)}" data-sym="${esc(r.s.id)}" title="${esc(D.notes[r.s.id]?.summary || kindLabel(r.s.kind))}">${marker(st, 8)}<span>${esc(r.s.name.split(".").pop())}</span></div>`; }).join("")
+      const ps = probBySym[r.s.id];
+      return `<div class="fn${r.sub ? " sub" : ""}${ps ? " err" : ""}" data-s="${esc(r.s.id)}" ${ps ? `data-prob="${esc(ps[0].id)}"` : `data-sym="${esc(r.s.id)}"`} title="${esc(ps ? (ps[0].human?.what || ps[0].message) : (D.notes[r.s.id]?.summary || kindLabel(r.s.kind)))}">${marker(st, 8)}<span>${esc(r.s.name.split(".").pop())}</span>${ps ? `<i class="bang">!</i>` : ""}</div>`; }).join("")
       + (n.hidden ? `<div class="fn more">${L.more} ${n.hidden} ${L.parts}</div>` : "")
       + (!n.dir && !n.rows.length ? `<div class="fn more">${L.noparts}</div>` : "");
     const foot = n.dir ? `${n.files.length} ${L.files} · ${n.st.ok}/${n.st.n} ${L.parts}` : `${n.st.ok}/${n.st.n} ${L.parts}`;
@@ -483,7 +565,7 @@ function renderMap() {
         <div class="hd" data-go="${esc(n.id)}" tabindex="0" role="link"><div class="nm ${n.dir ? "dir" : ""}">${n.dir ? folderIcon(false, 16) : fileIcon(n.label, 16)}${esc(n.label)}</div>
         <div class="sm ${n.dir ? "two" : ""} ${note ? "" : "none"}">${esc(note || L.missing)}</div></div>
         ${n.dir ? "" : `<div style="padding-top:4px">${rows}</div>`}
-        <div class="ft">${marker(n.st.cls, 9)} ${foot}</div></div></foreignObject></g>`;
+        <div class="ft">${marker(n.st.cls, 9)} ${foot}${(() => { const k = n.files.reduce((a, f) => a + (probByFile[f.path]?.length || 0), 0); return k ? `<span class="bad">⚠ ${k}</span>` : ""; })()}</div></div></foreignObject></g>`;
   };
   const colHead = alone.length && cols.length ? `<text class="colhd" x="0" y="${shelfTop - 16}">${esc(L.alone)}</text><path d="M0 ${shelfTop - 34}H${width}" style="stroke:var(--rule-2);stroke-dasharray:2 4"/>` : "";
   const dn = dirNote(bp);

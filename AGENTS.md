@@ -7,6 +7,9 @@ cargo install --path tools/atlas             # once
 atlas pending <folder|file|file#fn> [--changed]   # what needs explaining (exit 2 = nothing)
 atlas write .atlas/tmp.json                  # save [{id|file|dir, summary, detail}]
 atlas inline <scope> [--apply]               # optional: comments in code, AST-verified
+atlas check [scope] | atlas debug -- <cmd>   # find errors → write [{problem, what, why, fix, try}]
+atlas problems                               # plain-language problems + commands to try
+atlas trace <fn>                             # callers / callees
 atlas open                                   # local map app
 ```
 
