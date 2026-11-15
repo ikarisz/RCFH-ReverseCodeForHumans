@@ -1,8 +1,8 @@
-# CodeAtlas
+# RCFH: Reverse Code For Humans
 
-**A local, open-source map of your codebase, explained in plain human language by your AI agent, only when you ask.**
+**CodeAtlas** — a local, open-source map of your codebase, explained in plain human language by your AI agent, only when you ask.**
 
-Like Obsidian, but for code. A scanner draws the real structure of the project (folders → files → functions → who calls whom). Your AI agent (Claude Code, Codex, Cursor…) writes an explanation for each part that someone with **zero coding knowledge** can read. Explanations can stay beside the code or go *into* the code as comments, with a structural check that guarantees the code itself never changes.
+Sister project of [RSFA](https://github.com/ikarisz/RSFA-ReverseSkillsForAgents): RSFA reverses an app so **agents** can use it; RCFH reverses code so **humans** can understand it. Like Obsidian, but for code. A scanner draws the real structure of the project (folders → files → functions → who calls whom). Your AI agent (Claude Code, Codex, Cursor…) writes an explanation for each part that someone with **zero coding knowledge** can read. Explanations can stay beside the code or go *into* the code as comments, with a structural check that guarantees the code itself never changes.
 
 ```
 /atlas src/payments      ← you type this when you don't understand something
@@ -23,7 +23,8 @@ Languages: JavaScript, TypeScript/TSX, Python, Rust, Go. Explanations are in Tha
 ## Install
 
 ```bash
-git clone <this repo> CodeAtlas && cd CodeAtlas
+git clone https://github.com/ikarisz/RCFH-ReverseCodeForHumans
+cd RCFH-ReverseCodeForHumans
 ./install.sh          # Windows: powershell -ExecutionPolicy Bypass -File install.ps1
 ```
 
@@ -97,7 +98,7 @@ mcp
 
 ### ภาษาไทย
 
-CodeAtlas คือแอปที่รันบนเครื่องของคุณเอง ใช้ดูแผนผังทั้งโปรเจกต์ (โฟลเดอร์ → ไฟล์ → ฟังก์ชัน → ใครเรียกใคร) โดยให้ AI agent เขียน **คำอธิบายเป็นภาษาคน** ที่คนไม่รู้โค้ดเลยก็อ่านเข้าใจ
+RCFH (CodeAtlas) คือแอปที่รันบนเครื่องของคุณเอง ใช้ดูแผนผังทั้งโปรเจกต์ (โฟลเดอร์ → ไฟล์ → ฟังก์ชัน → ใครเรียกใคร) โดยให้ AI agent เขียน **คำอธิบายเป็นภาษาคน** ที่คนไม่รู้โค้ดเลยก็อ่านเข้าใจ
 
 - **ไม่ทำงานเองอัตโนมัติ** จะทำงานเฉพาะตอนพิมพ์ `/atlas <โฟลเดอร์|ไฟล์|--changed>` เท่านั้น จึงไม่เปลือง token
 - **รู้ว่าคำอธิบายไหนล้าสมัย** ถ้าโค้ดเปลี่ยน แผนที่จะขึ้นสีส้ม และ `/atlas --changed` จะอธิบายเฉพาะส่วนที่เปลี่ยน

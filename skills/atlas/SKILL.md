@@ -12,7 +12,7 @@ The `atlas` CLI maps the codebase (files → functions → who calls what) with 
 ## 0. Tool check (once)
 
 ```bash
-atlas --help || cargo install --path <CodeAtlas-repo>/tools/atlas
+atlas --help || cargo install --path <RCFH-repo>/tools/atlas
 ```
 
 If `.atlas/config.json` doesn't exist, ask the user once which language and level they want, then run `atlas init --lang th|en --level beginner|dev`. The default is Thai, beginner.

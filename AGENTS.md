@@ -1,4 +1,4 @@
-# Agent instructions: CodeAtlas
+# Agent instructions: RCFH (CodeAtlas)
 
 Only when the user explicitly asks to explain or translate code into plain language (e.g. `/atlas <scope>`), follow [`skills/atlas/SKILL.md`](skills/atlas/SKILL.md). Never run it proactively; it exists to save tokens by explaining only what the user asks about.
 
